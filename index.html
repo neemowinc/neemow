@@ -6,15 +6,13 @@
     function redirectToTarget() {
       const params = new URLSearchParams(window.location.search);
       const target = params.get("to");
- 
       // Optional: basic validation to prevent JavaScript injection
       if (target && /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(target)) {
-        window.location.href = target;
+        window. Location.replace = target;
       } else {
         document.body.innerHTML = "<p>Invalid or missing redirect target.</p>";
       }
     }
- 
     redirectToTarget();
 </script>
 </head>
