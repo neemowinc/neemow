@@ -56,31 +56,64 @@
     line-height: 1.5;
     margin: 0 0 28px;
   }
-  #continueBtn {
+  .close-instruction {
     display: none;
-    background: #3D8E41;
-    color: #ffffff;
-    border: none;
-    width: 100%;
-    padding: 14px 24px;
-    font-size: 15px;
-    font-weight: 500;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #f4f9f4;
+    border: 1px solid #d7ecd8;
     border-radius: 10px;
-    text-decoration: none;
-    cursor: pointer;
-    transition: opacity 0.2s;
+    padding: 14px 16px;
+    margin-top: 4px;
   }
-  #continueBtn:active { opacity: 0.85; }
+  .close-instruction .x-badge {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1.5px solid #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 500;
+    color: #4b5563;
+  }
+  .close-instruction span {
+    font-size: 14px;
+    color: #1a1a1a;
+    font-weight: 500;
+    text-align: left;
+  }
+  .pointer-arrow {
+    display: none;
+    position: fixed;
+    top: 18px;
+    left: 30px;
+    width: 40px;
+    height: 40px;
+    z-index: 10;
+  }
 </style>
 </head>
 <body>
+<svg class="pointer-arrow" id="pointerArrow" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 45C35 40 15 30 8 8" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M2 12L8 8L11 15" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
+
 <div class="card">
   <div class="icon-wrap" id="iconWrap">
     <div class="spinner"></div>
   </div>
   <h1 id="title">Setup complete</h1>
   <p id="subtitle">Taking you back to Neemow...</p>
-  <a id="continueBtn">Continue</a>
+  <div class="close-instruction" id="closeInstruction">
+    <div class="x-badge">✕</div>
+    <span>Tap the ✕ in the top corner to return to Neemow</span>
+  </div>
 </div>
 
 <script>
@@ -94,10 +127,11 @@
   }
 
   const target = getTarget();
-  const btn = document.getElementById("continueBtn");
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
   const iconWrap = document.getElementById("iconWrap");
+  const closeInstruction = document.getElementById("closeInstruction");
+  const pointerArrow = document.getElementById("pointerArrow");
 
   if (!target) {
     title.textContent = "Something went wrong";
@@ -107,10 +141,8 @@
     // Attempt automatic redirect (works on Android, usually silently blocked on iOS)
     window.location.href = target;
 
-    btn.href = target;
-
     // If still on this page after a short delay, auto-redirect was blocked (iOS).
-    // A tap satisfies iOS's user-gesture requirement for the handoff to succeed.
+    // Show clear instructions to use the native close (X) control instead.
     setTimeout(function () {
       if (document.visibilityState === "visible") {
         iconWrap.innerHTML =
@@ -118,8 +150,9 @@
           '<path d="M20 6L9 17l-5-5" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
           '</svg>';
         title.textContent = "Setup complete";
-        subtitle.textContent = "Your account is ready. Tap below to continue to Neemow.";
-        btn.style.display = "inline-block";
+        subtitle.textContent = "Your account is ready.";
+        closeInstruction.style.display = "flex";
+        pointerArrow.style.display = "block";
       }
     }, 900);
   }
