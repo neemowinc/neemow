@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Setup Complete</title>
+<title>Return to Neemow</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -56,103 +56,112 @@
     line-height: 1.5;
     margin: 0 0 28px;
   }
-  .close-instruction {
+  .return-link {
     display: none;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    background: #f4f9f4;
-    border: 1px solid #d7ecd8;
+    width: 100%;
+    background: #3D8E41;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
     border-radius: 10px;
     padding: 14px 16px;
     margin-top: 4px;
   }
-  .close-instruction .x-badge {
-    flex-shrink: 0;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 1.5px solid #d1d5db;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 500;
-    color: #4b5563;
+  .return-link:active {
+    background: #33792f;
   }
-  .close-instruction span {
-    font-size: 14px;
-    color: #1a1a1a;
-    font-weight: 500;
-    text-align: left;
-  }
-  .pointer-arrow {
+  .web-link {
     display: none;
-    position: fixed;
-    top: 18px;
-    left: 30px;
-    width: 40px;
-    height: 40px;
-    z-index: 10;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #3D8E41;
+    font-weight: 500;
+    text-decoration: none;
   }
 </style>
 </head>
 <body>
-<svg class="pointer-arrow" id="pointerArrow" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M50 45C35 40 15 30 8 8" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <path d="M2 12L8 8L11 15" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-</svg>
-
 <div class="card">
   <div class="icon-wrap" id="iconWrap">
     <div class="spinner"></div>
   </div>
-  <h1 id="title">Setup complete</h1>
-  <p id="subtitle">Taking you back to Neemow...</p>
-  <div class="close-instruction" id="closeInstruction">
-    <div class="x-badge">✕</div>
-    <span>Tap the ✕ in the top corner to return to Neemow</span>
-  </div>
+  <h1 id="title">Taking you back to Neemow</h1>
+  <p id="subtitle">One moment...</p>
+  <a class="return-link" id="returnLink" href="#">Open the Neemow app</a>
+  <a class="web-link" id="webLink" href="#">Using Neemow in your browser? Continue on www.neemow.com</a>
 </div>
 
 <script>
+  // The app links here as ?to=neemow://neemow.com/<page>?id=1&cusId=cus_2,
+  // unencoded. URLSearchParams would split that at the "&" and silently drop
+  // every parameter after the first, so take everything after "to=" instead.
   function getTarget() {
-    const params = new URLSearchParams(window.location.search);
-    const target = params.get("to");
-    if (target && /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(target)) {
-      return target;
+    const match = window.location.search.match(/[?&]to=(.*)$/);
+    if (!match) return null;
+    let target = match[1];
+    try {
+      target = decodeURIComponent(target);
+    } catch (e) {
+      // Not encoded (or contains a bare "%"); use it as-is.
     }
-    return null;
+    // Only ever hand off to the app. Anything else would make this page an
+    // open redirect on a neemow.com domain.
+    return /^neemow:\/\//i.test(target) ? target : null;
   }
 
   const target = getTarget();
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
   const iconWrap = document.getElementById("iconWrap");
-  const closeInstruction = document.getElementById("closeInstruction");
-  const pointerArrow = document.getElementById("pointerArrow");
+  const returnLink = document.getElementById("returnLink");
+  const webLink = document.getElementById("webLink");
+
+  // Same page on the website: neemow://neemow.com/x?id=1 -> https://www.neemow.com/x?id=1
+  function webUrlFor(appUrl) {
+    return appUrl.replace(/^neemow:\/\/(neemow\.com)?\/?/i, "https://www.neemow.com/");
+  }
+
+  // There is no Neemow app on a computer, so a desktop visitor can only be a
+  // website user -- send them straight back to www.neemow.com.
+  const isPhone =
+    /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
   if (!target) {
     title.textContent = "Something went wrong";
     subtitle.textContent = "We couldn't find where to redirect you.";
     iconWrap.style.display = "none";
+  } else if (!isPhone) {
+    window.location.replace(webUrlFor(target));
   } else {
-    // Attempt automatic redirect (works on Android, usually silently blocked on iOS)
+    returnLink.href = target;
+    webLink.href = webUrlFor(target);
+
+    // Best-effort automatic hand-off. Android usually follows it; iOS Safari
+    // blocks a scripted custom-scheme redirect that isn't a direct response
+    // to a tap.
     window.location.href = target;
 
-    // If still on this page after a short delay, auto-redirect was blocked (iOS).
-    // Show clear instructions to use the native close (X) control instead.
+    // Still here, so the hand-off was blocked. The app opens Stripe in the
+    // full Safari/Chrome app (LaunchMode.externalApplication), which has no
+    // close (X) button to point at -- give the user a real link instead.
+    // Browsers do follow a custom-scheme link when it is actually tapped.
+    //
+    // This page is also the return for failed or cancelled payments, so the
+    // wording stays neutral rather than announcing success.
     setTimeout(function () {
       if (document.visibilityState === "visible") {
         iconWrap.innerHTML =
           '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-          '<path d="M20 6L9 17l-5-5" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path d="M5 12h14M13 6l6 6-6 6" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
           '</svg>';
-        title.textContent = "Setup complete";
-        subtitle.textContent = "Your account is ready.";
-        closeInstruction.style.display = "flex";
-        pointerArrow.style.display = "block";
+        title.textContent = "You're all set here";
+        subtitle.textContent = "Tap below to go back to Neemow.";
+        returnLink.style.display = "flex";
+        webLink.style.display = "inline-block";
       }
     }, 900);
   }
