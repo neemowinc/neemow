@@ -56,64 +56,33 @@
     line-height: 1.5;
     margin: 0 0 28px;
   }
-  .close-instruction {
+  .return-link {
     display: none;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    background: #f4f9f4;
-    border: 1px solid #d7ecd8;
+    width: 100%;
+    background: #3D8E41;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
     border-radius: 10px;
     padding: 14px 16px;
     margin-top: 4px;
   }
-  .close-instruction .x-badge {
-    flex-shrink: 0;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 1.5px solid #d1d5db;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 500;
-    color: #4b5563;
-  }
-  .close-instruction span {
-    font-size: 14px;
-    color: #1a1a1a;
-    font-weight: 500;
-    text-align: left;
-  }
-  .pointer-arrow {
-    display: none;
-    position: fixed;
-    top: 18px;
-    left: 30px;
-    width: 40px;
-    height: 40px;
-    z-index: 10;
+  .return-link:active {
+    background: #33792f;
   }
 </style>
 </head>
 <body>
-<svg class="pointer-arrow" id="pointerArrow" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M50 45C35 40 15 30 8 8" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <path d="M2 12L8 8L11 15" stroke="#3D8E41" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-</svg>
-
 <div class="card">
   <div class="icon-wrap" id="iconWrap">
     <div class="spinner"></div>
   </div>
   <h1 id="title">Setup complete</h1>
   <p id="subtitle">Taking you back to Neemow...</p>
-  <div class="close-instruction" id="closeInstruction">
-    <div class="x-badge">✕</div>
-    <span>Tap the ✕ in the top corner to return to Neemow</span>
-  </div>
+  <a class="return-link" id="returnLink" href="#">Return to Neemow</a>
 </div>
 
 <script>
@@ -130,19 +99,24 @@
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
   const iconWrap = document.getElementById("iconWrap");
-  const closeInstruction = document.getElementById("closeInstruction");
-  const pointerArrow = document.getElementById("pointerArrow");
+  const returnLink = document.getElementById("returnLink");
 
   if (!target) {
     title.textContent = "Something went wrong";
     subtitle.textContent = "We couldn't find where to redirect you.";
     iconWrap.style.display = "none";
   } else {
-    // Attempt automatic redirect (works on Android, usually silently blocked on iOS)
+    returnLink.href = target;
+
+    // Attempt automatic redirect (works on Android; iOS Safari silently
+    // blocks a script-triggered custom-scheme redirect that isn't a direct
+    // response to a user tap, so this is a best-effort attempt only).
     window.location.href = target;
 
-    // If still on this page after a short delay, auto-redirect was blocked (iOS).
-    // Show clear instructions to use the native close (X) control instead.
+    // If still on this page after a short delay, the automatic redirect was
+    // blocked. Show a real, tappable link instead — iOS will follow a
+    // custom-scheme link from an actual tap even though it blocked the
+    // scripted one above.
     setTimeout(function () {
       if (document.visibilityState === "visible") {
         iconWrap.innerHTML =
@@ -151,8 +125,7 @@
           '</svg>';
         title.textContent = "Setup complete";
         subtitle.textContent = "Your account is ready.";
-        closeInstruction.style.display = "flex";
-        pointerArrow.style.display = "block";
+        returnLink.style.display = "flex";
       }
     }, 900);
   }
